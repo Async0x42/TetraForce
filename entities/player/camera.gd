@@ -12,7 +12,7 @@ func _ready():
 	set_process(false)
 	
 func _physics_process(delta):
-	global.player.get_node("Light2D").enabled = global.items.has("Lantern") #Moved so it updates while your in a dark room
+	global.player.get_node("PointLight2D").enabled = global.items.has("Lantern") #Moved so it updates while your in a dark room
 
 func initialize(node):
 	target = node
@@ -28,7 +28,7 @@ func scroll_screen(rect : Rect2):
 	
 	var scroll_from = get_camera_screen_center()
 	
-	unlimit() # remove the current camera limits (can't have limits while scrolling)
+	unlimit() # remove_at the current camera limits (can't have limits while scrolling)
 	position = scroll_from
 	
 	# where we're scrolling to. it's the first position in the next zone that
@@ -43,10 +43,10 @@ func scroll_screen(rect : Rect2):
 	
 	$Tween.interpolate_property(self, "position", scroll_from, scroll_to, SCROLL_DURATION, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
 	$Tween.start()
-	yield($Tween, "tween_all_completed")
+	await $Tween.tween_all_completed
 	
 	set_limits(rect)
-	smoothing_enabled = true
+	follow_smoothing_enabled = true
 	target.set_physics_process(true)
 	set_process(true)
 
@@ -72,7 +72,7 @@ func set_light(mode):
 		$CanvasModulate.color = Color(0, 0, 0, 1.0)
 	else:
 		$CanvasModulate.color = Color(1.0, 1.0, 1.0, 1.0)
-		target.get_node("Light2D").enabled = false
+		target.get_node("PointLight2D").enabled = false
 		for light in get_tree().get_nodes_in_group("light_halo"):
 			light.enabled = false
 			

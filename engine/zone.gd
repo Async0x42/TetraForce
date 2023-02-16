@@ -1,11 +1,11 @@
 extends Area2D
 
-export var music = ""
-export var musicfx = ""
-export var light = ""
+@export var music = ""
+@export var musicfx = ""
+@export var light = ""
 
-onready var collision_shape : CollisionShape2D = $CollisionShape2D
-onready var shape : RectangleShape2D = $CollisionShape2D.shape
+@onready var collision_shape : CollisionShape2D = $CollisionShape2D
+@onready var shape : RectangleShape2D = $CollisionShape2D.shape
 
 func _ready():
 	if music == "":
@@ -15,7 +15,7 @@ func _ready():
 	if light == "":
 		light = get_parent().get_parent().light
 	
-	yield(get_tree(), "idle_frame")
+	await get_tree().idle_frame
 	
 	for body in get_overlapping_bodies():
 		if body.is_in_group("zoned"):

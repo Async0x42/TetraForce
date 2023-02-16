@@ -1,30 +1,30 @@
 extends Area2D
 
-export(bool) var requires_weight = false
+@export var requires_weight: bool = false
 
 var player
 var pressed = false
 var timer = Timer.new()
 
-onready var pushed = false setget set_pushed
+@onready var pushed = false : set = set_pushed
 
 signal on_button_pressed
 signal no_weight
 
 func _ready():
-	self.connect("area_entered", self, "on_pressed")
-	self.connect("area_exited", self, "on_released")
-	self.connect("body_entered", self, "on_body_entered")
-	self.connect("body_exited", self, "on_body_exit")
+	self.connect("area_entered",Callable(self,"on_pressed"))
+	self.connect("area_exited",Callable(self,"on_released"))
+	self.connect("body_entered",Callable(self,"on_body_entered"))
+	self.connect("body_exited",Callable(self,"on_body_exit"))
 	set_physics_process(false)
-	timer.connect("timeout",self,"check_door") 
+	timer.connect("timeout",Callable(self,"check_door")) 
 	timer.set_wait_time(1)
 	add_child(timer)
 	timer.start()
 	
 func _physics_process(delta):
 	if pressed == false:
-		yield(get_tree().create_timer(0.5), "timeout")
+		await get_tree().create_timer(0.5).timeout
 		if get_overlapping_areas():
 			open()
 		else:

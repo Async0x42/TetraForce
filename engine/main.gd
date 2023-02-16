@@ -3,24 +3,24 @@ extends Control
 
 var default_map = "res://maps/shrine.tmx"
 var default_entrance = "player_start"
-export var default_port = 7777
+@export var default_port = 7777
 var server_api = preload("res://engine/server_api.gd").new()
 
-onready var address_line = $multiplayer/Direct/address
-onready var lobby_line = $multiplayer/Automatic/lobby
+@onready var address_line = $multiplayer/Direct/address
+@onready var lobby_line = $multiplayer/Automatic/lobby
 #onready var endpoint_button = $options/scroll/vbox/endpoint JosephB Needs to confirm deletion
-onready var singleplayer_focus = $top/VBoxContainer/singleplayer
-onready var loading_screen = $loading_screen_layer/loading_screen
+@onready var singleplayer_focus = $top/VBoxContainer/singleplayer
+@onready var loading_screen = $loading_screen_layer/loading_screen
 
 func _ready():
-	$AnimatedSprite.playing = true
+	$AnimatedSprite2D.playing = true
 	global.load_options()
 	hide_menus()
 	$top.show()
 	
-	get_tree().connect("connected_to_server", self, "_client_connect_ok")
-	get_tree().connect("connection_failed", self, "_client_connect_fail")
-	network.connect("end_aws_task", self, "end_aws_task")
+	get_tree().connect("connected_to_server",Callable(self,"_client_connect_ok"))
+	get_tree().connect("connection_failed",Callable(self,"_client_connect_fail"))
+	network.connect("end_aws_task",Callable(self,"end_aws_task"))
 	
 	get_tree().set_auto_accept_quit(false)
 	
@@ -46,7 +46,7 @@ func _ready():
 		var map_path = str("res://maps/", map_arg)
 		default_map = map_path
 		default_entrance = ""
-		yield(get_tree(), "idle_frame")
+		await get_tree().idle_frame
 		host_server(false, 0, 0, 1)
 		
 	
@@ -59,9 +59,9 @@ func _ready():
 		var empty_timeout = get_empty_server_timeout(arguments)
 		set_dedicated_server(empty_timeout)
 	
-	#print(yield(server_api.get_servers(), "completed"))
+	#print(await server_api.get_servers().completed)
 	
-	yield(get_tree().create_timer(0.5), "timeout")
+	await get_tree().create_timer(0.5).timeout
 	sfx.set_music("shrine", "quiet")
 	singleplayer_focus.grab_focus()
 
@@ -70,7 +70,7 @@ func get_empty_server_timeout(arguments):
 	
 	var empty_timeout_arg = arguments.get("empty-server-timeout")   # don't set default here
 	if empty_timeout_arg != null:
-		if empty_timeout_arg.is_valid_integer():
+		if empty_timeout_arg.is_valid_int():
 			var empty_timeout_arg_int = int(empty_timeout_arg)
 			if empty_timeout_arg_int >= 0:
 				empty_timeout = empty_timeout_arg_int
@@ -105,20 +105,20 @@ func start_game(dedicated = false, empty_timeout = 0, map = null, entrance = nul
 			global.next_entrance = default_entrance
 		var level
 		if map:
-			level = load(map).instance()
+			level = load(map).instantiate()
 		else:
-			level = load(default_map).instance()
+			level = load(default_map).instantiate()
 		get_tree().get_root().add_child(level)
 		hide()
 
 func host_server(dedicated = false, empty_timeout = 0, port = default_port, max_players = 16):
 	var ws = WebSocketServer.new()
-	var err = ws.listen(port, PoolStringArray(), true);
-	get_tree().set_network_peer(ws)
+	var err = ws.listen(port, PackedStringArray(), true);
+	get_tree().set_multiplayer_peer(ws)
 	if err != OK:
 		print("Port in use")
 		return
-	get_tree().set_network_peer(ws)
+	get_tree().set_multiplayer_peer(ws)
 	
 	start_game(dedicated, empty_timeout)
 
@@ -133,27 +133,27 @@ func join_server(ip, port):
 	
 	var ws = WebSocketClient.new()
 	var url = "ws://%s:%s" % [ip, port]
-	ws.connect("server_close_request", self, "_client_disconnect")
-	ws.connect_to_url(url, PoolStringArray(), true);
-	get_tree().set_network_peer(ws)
+	ws.connect("server_close_request",Callable(self,"_client_disconnect"))
+	ws.connect_to_url(url, PackedStringArray(), true);
+	get_tree().set_multiplayer_peer(ws)
 
 func join_aws(lobby_name):
 
 	# Attempt to join existing server
-	if not yield(attempt_to_join_aws_sever(lobby_name), "completed"):
+	if not await attempt_to_join_aws_sever(lobby_name).completed:
 		
 		# Request new server
 		loading_screen.with_load("Creating '%s'" % lobby_name, 25)
-		var new_lobby = yield(server_api.create_server(lobby_name), "completed")
+		var new_lobby = await server_api.create_server(lobby_name).completed
 		print("API Response: %s" % new_lobby)
 		
-		# Handle response based on result
+		# Handle response based checked result
 		if new_lobby.success:
 			
 			# Attempt to get server info 15 times
 			for i in range(15):
-				yield(get_tree().create_timer(8.0), "timeout")
-				if yield(attempt_to_join_aws_sever(lobby_name, true), "completed"):
+				await get_tree().create_timer(8.0).timeout
+				if await attempt_to_join_aws_sever(lobby_name, true).completed:
 					return
 
 			# Timeout if no sever info found
@@ -172,10 +172,10 @@ func attempt_to_join_aws_sever(lobby_name, hide_loading_message = false) -> bool
 
 	while waitingOnServer:
 		# Look up lobby
-		var lobby = yield(server_api.get_server(lobby_name), "completed")
+		var lobby = await server_api.get_server(lobby_name).completed
 		print("API Response: %s" % lobby)
 		
-		# Return and act on result
+		# Return and act checked result
 		if lobby.success == true:
 			if "status" in lobby.data:
 				if lobby.data.status == "RUNNING":
@@ -183,7 +183,7 @@ func attempt_to_join_aws_sever(lobby_name, hide_loading_message = false) -> bool
 					return true
 				elif lobby.data.status in ["PENDING", "PROVISIONING"]:
 					loading_screen.with_load("'%s' pending" % lobby_name, 50)
-					yield(get_tree().create_timer(5.0), "timeout")
+					await get_tree().create_timer(5.0).timeout
 				else:
 					print("%s has status: %s", [lobby_name, lobby.data.status])
 					waitingOnServer = false
@@ -196,7 +196,7 @@ func attempt_to_join_aws_sever(lobby_name, hide_loading_message = false) -> bool
 	return false
 
 func end_aws_task(task_name):
-	print(yield(server_api.stop_server(task_name), "completed"))
+	print(await server_api.stop_server(task_name).completed)
 
 func _client_connect_ok():
 	loading_screen.stop_loading(100)
@@ -220,7 +220,7 @@ func end_game():
 	screenfx.play("default")
 
 func quit_program():
-	get_tree().set_network_peer(null)
+	get_tree().set_multiplayer_peer(null)
 	get_tree().quit()
 
 func set_dedicated_server(empty_timeout):
@@ -239,7 +239,7 @@ func _notification(n):
 		quit_program()
 
 func _on_connect_pressed():
-	#print(yield(server_api.stop_server(lobby_line.text), "completed"))
+	#print(await server_api.stop_server(lobby_line.text).completed)
 	join_aws(lobby_line.text)
 
 func _on_host_pressed():

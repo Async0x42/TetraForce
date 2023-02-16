@@ -1,6 +1,6 @@
 extends Label
 
-export(String) var contributors_paths = "contributors.txt"
+@export var contributors_paths: String = "contributors.txt"
 
 func _ready():
 	var file = File.new()
@@ -27,6 +27,6 @@ func shuffleList(list):
 		randomize()
 		var x = randi()%indexList.size()
 		shuffledList.append(list[x])
-		indexList.remove(x)
-		list.remove(x)
+		indexList.remove_at(x)
+		list.remove_at(x)
 	return shuffledList

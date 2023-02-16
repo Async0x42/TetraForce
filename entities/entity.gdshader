@@ -3,13 +3,13 @@ shader_type canvas_item;
 uniform bool is_hurt = false;
 uniform bool custom_colors = false;
 
-uniform vec4 skin : hint_color = vec4(0.969, 0.71, 0.545, 1.0);
-uniform vec4 outline : hint_color = vec4(0.0, 0.0, 0.0, 1.0);
-uniform vec4 accent : hint_color = vec4(0.094, 0.522, 0.969, 1.0);
+uniform vec4 skin : source_color = vec4(0.969, 0.71, 0.545, 1.0);
+uniform vec4 outline : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+uniform vec4 accent : source_color = vec4(0.094, 0.522, 0.969, 1.0);
 
-uniform vec4 hurt_skin : hint_color = vec4(0.0, 0.0, 0.0, 1.0);
-uniform vec4 hurt_outline : hint_color = vec4(0.973, 0.69, 0.188, 1.0);
-uniform vec4 hurt_accent : hint_color = vec4(1.0, 0.0, 0.0, 1.0);
+uniform vec4 hurt_skin : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+uniform vec4 hurt_outline : source_color = vec4(0.973, 0.69, 0.188, 1.0);
+uniform vec4 hurt_accent : source_color = vec4(1.0, 0.0, 0.0, 1.0);
 
 vec4 hurt(vec4 base) {
 	float sum = base.r + base.g + base.b;

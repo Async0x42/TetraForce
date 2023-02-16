@@ -6,7 +6,7 @@ var action_string
 enum ACTIONS {UP, DOWN, LEFT, RIGHT, A, B, X, Y, START, QUICK_SAVE}
 
 func _ready():
-	global.connect("options_loaded", self, "update_options")
+	global.connect("options_loaded",Callable(self,"update_options"))
 	_set_keys()
 
 func _input(event):
@@ -22,13 +22,13 @@ func _input(event):
 
 func _change_key(new_key, type):
 	# delete actions of the same type as the new key
-	if !InputMap.get_action_list(action_string).empty():
+	if !InputMap.action_get_events(action_string).is_empty():
 		# walk backwards through the array as we may be deleting its items!
-		for i in range(InputMap.get_action_list(action_string).size() - 1, -1, -1):
-			if InputMap.get_action_list(action_string)[i] is type:
-				InputMap.action_erase_event(action_string, InputMap.get_action_list(action_string)[i])
+		for i in range(InputMap.action_get_events(action_string).size() - 1, -1, -1):
+			if InputMap.action_get_events(action_string)[i] is type:
+				InputMap.action_erase_event(action_string, InputMap.action_get_events(action_string)[i])
 
-	# remove the new key from any action it is assigned to right now
+	# remove_at the new key from any action it is assigned to right now
 	for action in ACTIONS:
 		if InputMap.action_has_event(action, new_key):
 			InputMap.action_erase_event(action, new_key)
@@ -61,14 +61,14 @@ func _set_keys():
 		var action_button = get_node("scroll/vbox/Action_" + str(action) + "/Button")
 		var action_label = get_node("scroll/vbox/Action_" + str(action) + "/Label")
 
-		if !action_button.is_connected("pressed", self, "_mark_button"):
-			action_button.connect("pressed", self, "_mark_button", [str(action)])
+		if !action_button.is_connected("pressed",Callable(self,"_mark_button")):
+			action_button.connect("pressed",Callable(self,"_mark_button").bind(str(action)))
 
 		action_button.set_pressed(false)
 		action_label.set_text(str(action))
 		
-		if !InputMap.get_action_list(action).empty():
-			var btn_text = _actions_join(InputMap.get_action_list(action), ", ")
+		if !InputMap.action_get_events(action).is_empty():
+			var btn_text = _actions_join(InputMap.action_get_events(action), ", ")
 			action_button.set_text(btn_text)
 		else:
 			action_label.set_text("No Button!")
@@ -97,7 +97,7 @@ func update_options():
 		for keybind in global.options.keybinds[input_type_to_string(type)]:
 			action_string = keybind
 			var event = type.new()
-			event.scancode = OS.find_scancode_from_string(global.options.keybinds[input_type_to_string(type)][keybind])
+			event.scancode = OS.find_keycode_from_string(global.options.keybinds[input_type_to_string(type)][keybind])
 			_change_key(event, type)
 
 func input_type_to_string(type):
@@ -111,4 +111,4 @@ func input_type_to_string(type):
 func update_action(type, action, value):
 	intialize_options()
 
-	global.options.keybinds[input_type_to_string(type)][action] = OS.get_scancode_string(value)
+	global.options.keybinds[input_type_to_string(type)][action] = OS.get_keycode_string(value)

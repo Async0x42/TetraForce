@@ -19,12 +19,12 @@ var visible = false
 
 
 #------UI--------#
-onready var choiceBox = $DialogueUI/ChoiceBox
-onready var dialogueText = $DialogueUI/DialogueText 
-onready var dialoguePanel = $DialogueUI #Less rewritting if you want to move the script to another object
-onready var dialogueName = $DialogueUI/DialogueName
-onready var tween = $DialogueUI/Tween
-onready var dialogueButtons = [$DialogueUI/ChoiceBox/Button1,$DialogueUI/ChoiceBox/Button2]
+@onready var choiceBox = $DialogueUI/ChoiceBox
+@onready var dialogueText = $DialogueUI/DialogueText 
+@onready var dialoguePanel = $DialogueUI #Less rewritting if you want to move the script to another object
+@onready var dialogueName = $DialogueUI/DialogueName
+@onready var tween = $DialogueUI/Tween
+@onready var dialogueButtons = [$DialogueUI/ChoiceBox/Button1,$DialogueUI/ChoiceBox/Button2]
 
 signal finished
 
@@ -44,7 +44,9 @@ func LoadFile(fname):
 	var file = File.new()
 	if file.file_exists("res://dialogue/"+file_name+".json"):
 		file.open("res://dialogue/" + file_name + ".json", file.READ)
-		var json_result = parse_json(file.get_as_text())
+		var test_json_conv = JSON.new()
+		test_json_conv.parse(file.get_as_text())
+		var json_result = test_json_conv.get_data()
 		force = bool(json_result["Force"])
 		random = bool(json_result["Random"])
 		curent_node_id = 0
@@ -106,8 +108,8 @@ func UpdateUI():
 		for x in dialogueButtons:
 			x.hide()
 			#disconnect buttons
-			if x.is_connected("pressed",self,"_on_Button_Pressed"):
-				x.disconnect("pressed",self,"_on_Button_Pressed")
+			if x.is_connected("pressed",Callable(self,"_on_Button_Pressed")):
+				x.disconnect("pressed",Callable(self,"_on_Button_Pressed"))
 			
 		dialogueName.text = curent_node_name
 		dialogueText.text = curent_node_text
@@ -116,7 +118,7 @@ func UpdateUI():
 				dialogueButtons[x].text = curent_node_choices[x]["text"]
 				
 				#connecto to button
-				dialogueButtons[x].connect("pressed",self,"_on_Button_Pressed", [curent_node_choices[x]["next_id"]])
+				dialogueButtons[x].connect("pressed",Callable(self,"_on_Button_Pressed").bind(curent_node_choices[x]["next_id"))
 				
 				dialogueButtons[x].show()
 				dialogueButtons[0].grab_focus()
@@ -124,10 +126,10 @@ func UpdateUI():
 		else:
 			dialogueButtons[0].text = "Continue"
 			if dialogueButtons[0].text == "Continue":
-				choiceBox.rect_position.y = 700
+				choiceBox.position.y = 700
 			dialogueButtons[0].show()
 			#connect to the button
-			dialogueButtons[0].connect("pressed",self,"_on_Button_Pressed", [curent_node_next_id])
+			dialogueButtons[0].connect("pressed",Callable(self,"_on_Button_Pressed").bind(curent_node_next_id))
 
 	else:
 		get_parent().action_cooldown = 10
@@ -152,7 +154,7 @@ func _on_Button_Pressed(id):
 
 #-----Initiate Dialogue-----#
 func Begin_Dialogue():
-	choiceBox.rect_position.y = -33
+	choiceBox.position.y = -33
 	LoadFile(file_name)
 	StartDialogue()
 

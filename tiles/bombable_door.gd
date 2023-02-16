@@ -1,9 +1,9 @@
 extends StaticBody2D
 
-onready var bombed = false setget set_bombed
-onready var animation = preload("res://effects/bombable_rock_explosion2.tscn").instance()
+@onready var bombed = false : set = set_bombed
+@onready var animation = preload("res://effects/bombable_rock_explosion2.tscn").instantiate()
 
-export(String) var direction = "up"
+@export var direction: String = "up"
 
 signal update_persistent_state
 

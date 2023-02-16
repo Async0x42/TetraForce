@@ -2,9 +2,9 @@ extends Entity
 
 class_name Player
 
-onready var nametag = $name/nametag
-onready var ray = $RayCast2D
-onready var collision = $CollisionShape2D
+@onready var nametag = $name/nametag
+@onready var ray = $RayCast2D
+@onready var collision = $CollisionShape2D
 var hud
 
 var push_counter = 0
@@ -18,7 +18,7 @@ var drowning = false
 func initialize():
 	hurt_sfx = "hurt"
 	add_to_group("player")
-	if is_network_master():
+	if is_multiplayer_authority():
 		global.player = self
 		set_physics_process(false)
 		state = "default"
@@ -43,7 +43,7 @@ func initialize():
 				spritedir = "Right"
 			
 		home_position = position
-		ray.set_collision_mask_bit(6, 1)
+		ray.set_collision_mask_value(6, 1)
 		
 		if global.transition_type == true:
 			anim.play("dropDown")
@@ -55,38 +55,38 @@ func initialize():
 		camera.initialize(self)
 		
 		
-		hud = preload("res://ui/hud/hud.tscn").instance()
+		hud = preload("res://ui/hud/hud.tscn").instantiate()
 		add_child(hud)
 		hud.initialize(self)
-		connect("update_count", hud, "update_weapons")
+		connect("update_count",Callable(hud,"update_weapons"))
 		nametag.hide()
 		
-		#$ZoneHandler.connect("area_entered", self, "zone_changed")
+		#$ZoneHandler.connect("area_entered",Callable(self,"zone_changed"))
 		ray.add_exception($ZoneHandler)
 		ray.add_exception(hitbox)
 		ray.add_exception(center)
 		
-		$ZoneHandler.connect("area_entered", self, "change_zone")
-		yield(get_tree(), "idle_frame")
+		$ZoneHandler.connect("area_entered",Callable(self,"change_zone"))
+		await get_tree().idle_frame
 		camera.get_node("Tween").remove_all()
-		yield(get_tree(), "idle_frame")
+		await get_tree().idle_frame
 		var zone = $ZoneHandler.get_overlapping_areas()[0]
 		var zone_size = zone.get_node("CollisionShape2D").shape.extents * 2
 		var zone_rect = Rect2(zone.position, zone_size)
 		current_zone = zone
 		camera.set_limits(zone_rect)
-		camera.smoothing_enabled = true
-		yield(get_tree(), "idle_frame")
+		camera.follow_smoothing_enabled = true
+		await get_tree().idle_frame
 		camera.position = position
 		camera.reset_smoothing()
 		camera.set_process(true)
 		
 		set_lightdir()
 		
-		yield(get_tree().create_timer(0.5), "timeout")
+		await get_tree().create_timer(0.5).timeout
 		while anim.current_animation == "dropDown":
-			yield(get_tree(), "idle_frame")
-			yield(anim, "animation_finished")
+			await get_tree().idle_frame
+			await anim.animation_finished
 			sfx.play("fall_land")
 		
 		set_physics_process(true)
@@ -95,7 +95,7 @@ func initialize():
 
 func _physics_process(_delta):
 
-	if !is_network_master():
+	if !is_multiplayer_authority():
 		sprite.flip_h = (spritedir == "Left")
 		return
 
@@ -239,14 +239,14 @@ func state_water():
 	
 	pos = position
 	
-	yield(get_tree().create_timer(0.2), "timeout")
+	await get_tree().create_timer(0.2).timeout
 	for body in center.get_overlapping_bodies():
 		if drowning == false:
 			if body is Water:
-				var water_origin = body.map_to_world(body.world_to_map(position.round() + Vector2(0,6))) + Vector2(8,8)
+				var water_origin = body.map_to_local(body.local_to_map(position.round() + Vector2(0,6))) + Vector2(8,8)
 				var water_hitbox = Rect2(water_origin - Vector2(5,5), Vector2(10,10))
-				position = position.linear_interpolate(water_origin, 0.1) # there's a way to lerp w/ delta time i forgot it tho
-				position += Vector2(0, rand_range(-1,0))
+				position = position.lerp(water_origin, 0.1) # there's a way to lerp w/ delta time i forgot it tho
+				position += Vector2(0, randf_range(-1,0))
 				if water_hitbox.has_point(position + Vector2(0,4)):
 					if spritedir == "Left":
 						water_origin = (water_origin - Vector2(8,0))
@@ -260,8 +260,8 @@ func state_water():
 					
 func state_swim():
 	state = "default"
-	set_collision_layer_bit(10, 0)
-	set_collision_layer_bit(6, 0)
+	set_collision_layer_value(10, 0)
+	set_collision_layer_value(6, 0)
 
 func state_menu():
 	anim_switch("idle")
@@ -285,18 +285,18 @@ func state_die():
 		network.peer_call(anim, "play", ["die"])
 		
 func death_effect():
-	var death_animation = preload("res://effects/enemy_death.tscn").instance()
+	var death_animation = preload("res://effects/enemy_death.tscn").instantiate()
 	death_animation.global_position = position
 	get_parent().add_child(death_animation)
 	sfx.play("death")
 	hide()
 	$CollisionShape2D.disabled = true
-	if is_network_master():
+	if is_multiplayer_authority():
 		if health <= 0:
 			screenfx.play("fadeblack")
-			yield(get_tree().create_timer(1.5), "timeout")
+			await get_tree().create_timer(1.5).timeout
 			hud.show_gameover()
-			yield(get_tree().create_timer(1.5), "timeout")
+			await get_tree().create_timer(1.5).timeout
 
 func respawn():
 	knockdir = Vector2(0,0)
@@ -352,7 +352,7 @@ func loop_interact():
 			sfx.play("fall2")
 		elif collider.is_in_group("water"):
 			if global.items.has("SeaCharm"):
-				ray.set_collision_mask_bit(6, 0)
+				ray.set_collision_mask_value(6, 0)
 				state = "swim"
 			else:
 				state = "water"
@@ -368,7 +368,7 @@ func hole_fall():
 		if child.is_in_group("item"):
 			child.queue_free()
 	state = "hole"
-	yield(get_tree().create_timer(1.5), "timeout")
+	await get_tree().create_timer(1.5).timeout
 	position = last_safe_pos
 	spritedir = last_safe_spritedir
 	damage(0.5, Vector2(0,0))
@@ -378,13 +378,13 @@ func hole_fall():
 func set_lightdir():
 	match spritedir:
 		"Left":
-			$Light2D.rotation_degrees = 90
+			$PointLight2D.rotation_degrees = 90
 		"Right":
-			$Light2D.rotation_degrees = 270
+			$PointLight2D.rotation_degrees = 270
 		"Up":
-			$Light2D.rotation_degrees = 180
+			$PointLight2D.rotation_degrees = 180
 		"Down":
-			$Light2D.rotation_degrees = 0
+			$PointLight2D.rotation_degrees = 0
 
 func change_zone(zone):
 	var zone_size = zone.get_node("CollisionShape2D").shape.extents * 2

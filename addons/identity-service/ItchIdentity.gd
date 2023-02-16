@@ -5,7 +5,7 @@ var data
 var validated = false
 
 func _init(raw_token : Dictionary = {}):
-	._init(raw_token)
+	super._init(raw_token)
 	platform = "itch"
 
 func load_identity(http_client : HTTPRequest) -> bool:
@@ -16,11 +16,13 @@ func load_identity(http_client : HTTPRequest) -> bool:
 		return false
 	
 	http_client.request("https://itch.io/api/1/jwt/me", ["Authorization: %s" % decoded_token["ITCHIO_API_KEY"]], true, HTTPClient.METHOD_GET)
-	var result = yield(http_client, "request_completed")
+	var result = await http_client.request_completed
 	if len(result) <= 3 || result[1] != 200:
 		handle_error("Did not return 200!")
 		return false
-	var json : JSONParseResult = JSON.parse(result[3].get_string_from_utf8())
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(result[3].get_string_from_utf8())
+	var json : JSON = test_json_conv.get_data()
 	if json.error:
 		handle_error("Failed to parse JSON!")
 		return false
@@ -48,7 +50,7 @@ func load_identity(http_client : HTTPRequest) -> bool:
 
 func _is_valid() -> bool:
 	if not validated:
-		var load_result = yield(self.load_identity(IdentityService),"completed")
+		var load_result = await self.load_identity(IdentityService).completed
 		validated = load_result
 	return validated
 

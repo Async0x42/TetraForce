@@ -1,6 +1,6 @@
 extends StaticBody2D
 
-onready var bombed = false setget set_bombed
+@onready var bombed = false : set = set_bombed
 
 signal update_persistent_state
 
@@ -12,7 +12,7 @@ func bombed(show_animation=true):
 	bombed = true
 	hide()
 	if show_animation:
-		var animation = preload("res://effects/bombable_rock_explosion.tscn").instance()
+		var animation = preload("res://effects/bombable_rock_explosion.tscn").instantiate()
 		get_parent().add_child(animation)
 		animation.position = position
 	emit_signal("update_persistent_state")

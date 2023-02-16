@@ -16,7 +16,7 @@ const DEFAULT_PEARL = []
 const DEFAULT_SPIRITPEARL = 0
 const DEFAULT_HEALTH = 5
 
-var version = null setget ,get_version
+var version = null : get = get_version
 var current_save_name = null
 var blacklisted_words = []
 var player
@@ -193,7 +193,7 @@ func filter_value(value : String):
 	if value_in_blacklist(value):
 		var new_value = ""
 		for i in range(len(value)):
-			new_value += CENSOR_CHARS[rand_range(0,len(CENSOR_CHARS))]
+			new_value += CENSOR_CHARS[randf_range(0,len(CENSOR_CHARS))]
 		return new_value
 	return value
 
@@ -206,7 +206,7 @@ func _validate_save_dir():
 func delete_save_data(save_name):
 	_validate_save_dir()
 	var dir = Directory.new()
-	dir.remove(SAVE_FORMAT % save_name)
+	dir.remove_at(SAVE_FORMAT % save_name)
 	print("Deleted save: %s" % save_name)
 
 func quicksave_game_data():
@@ -248,7 +248,7 @@ func save_game_data(save_name):
 
 	var save_file = File.new()
 	save_file.open(SAVE_FORMAT % save_name, File.WRITE)
-	save_file.store_line(Marshalls.utf8_to_base64(to_json(data)))
+	save_file.store_line(Marshalls.utf8_to_base64(JSON.new().stringify(data)))
 	save_file.close()
 	if not "quicksave" in save_name:
 		current_save_name = save_name
@@ -262,7 +262,9 @@ func load_game_data(save_name):
 	var save_file = File.new()
 	if save_file.file_exists(SAVE_FORMAT % save_name):
 		save_file.open(SAVE_FORMAT % save_name, File.READ)
-		var data = parse_json(Marshalls.base64_to_utf8(save_file.get_as_text()))
+		var test_json_conv = JSON.new()
+		test_json_conv.parse(Marshalls.base64_to_utf8(save_file.get_as_text()))
+		var data = test_json_conv.get_data()
 		for part in data:
 			match part:
 				"states":
@@ -290,7 +292,7 @@ func get_saves():
 	_validate_save_dir()
 	var dir = Directory.new()
 	dir.open("user://saves")
-	dir.list_dir_begin()
+	dir.list_dir_begin() # TODOGODOT4 fill missing arguments https://github.com/godotengine/godot/pull/40547
 	var save_file = dir.get_next()
 	while save_file != "":
 		if save_file.ends_with(".tetraforce"):
@@ -301,7 +303,7 @@ func get_saves():
 func save_options():
 	var save_options = File.new()
 	save_options.open("user://options.json", File.WRITE)
-	save_options.store_line(to_json(options))
+	save_options.store_line(JSON.new().stringify(options))
 	save_options.close()
 
 func load_options():
@@ -309,7 +311,9 @@ func load_options():
 	if !load_options.file_exists("user://options.json"):
 		return
 	load_options.open("user://options.json", File.READ)
-	var loaded_options = parse_json(load_options.get_line())
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(load_options.get_line())
+	var loaded_options = test_json_conv.get_data()
 	for option in loaded_options.keys():
 		options[option] = loaded_options.get(option)
 	load_options.close()
@@ -322,13 +326,13 @@ func change_map(map, entrance):
 
 	sfx.fadeout_music()
 	screenfx.play("fadewhite")
-	yield(screenfx, "animation_finished")
+	await screenfx.animation_finished
 	
 	var old_map = network.current_map
 	var root = old_map.get_parent()
 	
 	var new_map_path = "res://maps/" + map + ".tmx"
-	var new_map = load(new_map_path).instance()
+	var new_map = load(new_map_path).instantiate()
 	
 	old_map.queue_free()
 	next_entrance = entrance

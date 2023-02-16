@@ -35,20 +35,22 @@ func from_dict(data : Dictionary) -> void:
 		token = data["token"]
 
 static func decode_token(token : String) -> Dictionary:
-	var json : JSONParseResult = JSON.parse(Marshalls.base64_to_utf8(token))
+	var test_json_conv = JSON.new()
+	test_json_conv.parse(Marshalls.base64_to_utf8(token))
+	var json : JSON = test_json_conv.get_data()
 	if json.error == OK:
 		return json.result
 	return {}
 
 func encode_token(token_dict : Dictionary):
-	token = Marshalls.utf8_to_base64(to_json(token_dict))
+	token = Marshalls.utf8_to_base64(JSON.new().stringify(token_dict))
 
 func is_valid() -> bool:
 	if platform == "guest":
 		loaded = true
 	if self.has_method("_is_valid"):
 		return self.call("_is_valid")
-	yield(IdentityService.get_tree(), "idle_frame")
+	await IdentityService.get_tree().idle_frame
 	return true
 
 func _to_string() -> String:

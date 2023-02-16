@@ -19,7 +19,7 @@ func count_pearl():
 		set_spiritpearls(0)
 	
 func on_full_slate():
-	var newheart = Sprite.new()
+	var newheart = Sprite2D.new()
 	newheart.texture = player_hud.hearts.texture
 	newheart.hframes = player_hud.hearts.hframes
 	player_hud.hearts.add_child(newheart)

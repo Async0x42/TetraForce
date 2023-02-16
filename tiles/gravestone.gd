@@ -1,10 +1,10 @@
 extends StaticBody2D
 
-onready var ray = $RayCast2D
-onready var tween = $Tween
+@onready var ray = $RayCast2D
+@onready var tween = $Tween
 
-onready var target_position = position setget set_position
-onready var pushed = false setget set_pushed
+@onready var target_position = position : set = set_position
+@onready var pushed = false : set = set_pushed
 
 signal update_persistent_state
 
@@ -21,7 +21,7 @@ func interact(node):
 
 func attempt_move(direction):
 	ray.cast_to = direction * 16
-	yield(get_tree().create_timer(0.05), "timeout")
+	await get_tree().create_timer(0.05).timeout
 	if !ray.is_colliding() && global.player.spritedir == "Up"  && !pushed:
 		target_position = (position + direction * 16).snapped(Vector2(16,16)) - Vector2(8,8)
 		move_to(position, target_position)
@@ -37,7 +37,7 @@ func set_pushed(value):
 	pushed = value
 
 func move_to(current_pos, target_pos):
-	var animation = preload("res://effects/pushfx.tscn").instance()
+	var animation = preload("res://effects/pushfx.tscn").instantiate()
 	get_parent().add_child(animation)
 	animation.position = position
 	global.player.set_physics_process(false)
@@ -45,6 +45,6 @@ func move_to(current_pos, target_pos):
 	tween.interpolate_property(self, "position", current_pos, target_pos, 1.0, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
 	tween.start()
 	sfx.play("push")
-	yield(tween, "tween_completed")
+	await tween.finished
 	global.player.set_physics_process(true)
 

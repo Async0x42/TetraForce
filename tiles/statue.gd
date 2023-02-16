@@ -1,15 +1,15 @@
 extends StaticBody2D
 
-onready var ray = $RayCast2D
-onready var tween = $Tween
+@onready var ray = $RayCast2D
+@onready var tween = $Tween
 
-onready var target_position = position setget set_block_position
-onready var home_position = position
+@onready var target_position = position : set = set_block_position
+@onready var home_position = position
 
 func _ready():
 	add_to_group("pushable")
 	add_to_group("objects")
-	set_collision_layer_bit(10, 1)
+	set_collision_layer_value(10, 1)
 
 func interact(node):
 	if tween.is_active():
@@ -21,7 +21,7 @@ func interact(node):
 
 func attempt_move(direction):
 	ray.cast_to = direction * 16
-	yield(get_tree().create_timer(0.05), "timeout")
+	await get_tree().create_timer(0.05).timeout
 	if !ray.is_colliding():
 		target_position = (position + direction * 16).snapped(Vector2(16,16)) - Vector2(8,8)
 		move_to(position, target_position)

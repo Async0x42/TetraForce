@@ -1,12 +1,12 @@
 extends StaticBody2D
 
-var opened = false setget set_open
-var monster_trigger = false setget set_spawned
+var opened = false : set = set_open
+var monster_trigger = false : set = set_spawned
 
-export(String) var def = "weapon"
-export(String) var item = "Bow"
-export(String) var location = "room"
-export(bool) var hidden = false
+@export var def: String = "weapon"
+@export var item: String = "Bow"
+@export var location: String = "room"
+@export var hidden: bool = false
 
 signal update_persistent_state
 signal begin_dialogue
@@ -49,16 +49,16 @@ func interact(node):
 			"pearl":
 				network.add_to_state(def, item)
 		
-		yield(get_tree().create_timer(1), "timeout")
+		await get_tree().create_timer(1).timeout
 		
 		if global.get(str(def,"_def"))[item].acquire_dialogue != "":
-			var dialogue = preload("res://ui/dialogue/dialogue_manager.tscn").instance()
+			var dialogue = preload("res://ui/dialogue/dialogue_manager.tscn").instantiate()
 			node.add_child(dialogue)
-			connect("begin_dialogue", dialogue, "Begin_Dialogue")
+			connect("begin_dialogue",Callable(dialogue,"Begin_Dialogue"))
 			
 			dialogue.file_name = global.get(str(def,"_def"))[item].acquire_dialogue
 			emit_signal("begin_dialogue")
-			yield(dialogue, "finished")
+			await dialogue.finished
 		
 		hide_item()
 		network.peer_call(self, "hide_item")
@@ -76,7 +76,7 @@ func hide_item():
 func set_open(value):
 	opened = value
 	if opened:
-		$Sprite.frame = 1
+		$Sprite2D.frame = 1
 
 func open():
 	network.peer_call(self, "set_open", [true])

@@ -7,13 +7,13 @@ var my_identity : Identity
 func _ready():
 	if OS.has_environment("ITCHIO_API_KEY"):
 		var id = ItchIdentity.new({"ITCHIO_API_KEY": OS.get_environment("ITCHIO_API_KEY")})
-		if yield(id.load_identity(self),"completed"):
+		if await id.load_identity(self).completed:
 			my_identity = id
 			
 	# Intialize guest user
 	if not my_identity:
 		my_identity = Identity.new()
-		yield(global, "options_loaded")
+		await global.options_loaded
 		my_identity.username = global.options.player_data.name
 		my_identity.display_name = global.options.player_data.name
 	

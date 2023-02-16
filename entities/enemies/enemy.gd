@@ -2,9 +2,9 @@ extends Entity
 
 class_name Enemy
 
-export(bool) var chest_spawn = false
-export(String) var location = "room"
-export(String) var spawned_by = ""
+@export var chest_spawn: bool = false
+@export var location: String = "room"
+@export var spawned_by: String = ""
 
 var spawn_position = home_position
 
@@ -12,22 +12,22 @@ func _ready():
 	spawn_position = home_position
 	add_to_group("enemy")
 	add_to_group("maphost")
-	set_collision_layer_bit(0, 0)
-	set_collision_mask_bit(0, 0)
-	set_collision_layer_bit(1, 1)
-	set_collision_mask_bit(1, 1)
+	set_collision_layer_value(0, 0)
+	set_collision_mask_value(0, 0)
+	set_collision_layer_value(1, 1)
+	set_collision_mask_value(1, 1)
 	if spawned_by != "":
 		set_dead()
-		map.get_node(spawned_by).connect("started", self, "spawned")
-		map.get_node(spawned_by).connect("check_for_active", self, "spawned")
-		map.get_node(spawned_by).connect("reset", self, "set_dead")
+		map.get_node(spawned_by).connect("started",Callable(self,"spawned"))
+		map.get_node(spawned_by).connect("check_for_active",Callable(self,"spawned"))
+		map.get_node(spawned_by).connect("reset",Callable(self,"set_dead"))
 
 func _process(delta):
 	set_hole_bit(hitstun == 0)
 
 func set_hole_bit(bit):
-	set_collision_layer_bit(7, bit)
-	set_collision_mask_bit(7, bit)
+	set_collision_layer_value(7, bit)
+	set_collision_mask_value(7, bit)
 
 func check_for_death():
 	if health <= 0:
@@ -36,7 +36,7 @@ func check_for_death():
 		enemy_death(global_position)
 
 func enemy_death(pos):
-	var death_animation = preload("res://effects/enemy_death.tscn").instance()
+	var death_animation = preload("res://effects/enemy_death.tscn").instantiate()
 	death_animation.global_position = pos
 	map.add_child(death_animation)
 	sfx.play("enemy_death")
@@ -58,7 +58,7 @@ func hole_fall():
 	set_dead()
 	network.peer_call(self, "set_dead")
 
-remote func set_dead():
+@rpc("any_peer") func set_dead():
 	hide()
 	set_physics_process(false)
 	home_position = Vector2(0,0)
@@ -75,7 +75,7 @@ func spawned():
 	pos = home_position
 	position = home_position
 	health = MAX_HEALTH
-	var death_animation = preload("res://effects/enemy_death.tscn").instance()
+	var death_animation = preload("res://effects/enemy_death.tscn").instantiate()
 	death_animation.global_position = position
 	map.add_child(death_animation)
 

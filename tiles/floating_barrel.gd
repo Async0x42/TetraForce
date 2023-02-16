@@ -1,16 +1,16 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-onready var ray = $RayCast2D
-onready var tween = $Tween
+@onready var ray = $RayCast2D
+@onready var tween = $Tween
 
-onready var target_position = position setget set_block_position
-onready var pushed = false setget set_pushed
-onready var home_position = position
+@onready var target_position = position : set = set_block_position
+@onready var pushed = false : set = set_pushed
+@onready var home_position = position
 
 func _ready():
 	add_to_group("pushable")
 	add_to_group("objects")
-	set_collision_layer_bit(10, 1)
+	set_collision_layer_value(10, 1)
 	
 func interact(node):
 	if tween.is_active():
@@ -23,11 +23,11 @@ func interact(node):
 func attempt_move(direction):
 	if !pushed:
 		ray.cast_to = direction * 16
-		yield(get_tree().create_timer(0.05), "timeout")
-		if !ray.is_colliding() && !pushed && is_network_master():
+		await get_tree().create_timer(0.05).timeout
+		if !ray.is_colliding() && !pushed && is_multiplayer_authority():
 			process_move_attempt(direction)
 		if ray.is_colliding() && ray.get_collider().has_method("clear_water"):
-			if is_network_master():
+			if is_multiplayer_authority():
 				process_move_attempt(direction)
 				ray.get_collider().clear_water(target_position)
 				set_pushed(true)
@@ -40,7 +40,7 @@ func set_block_position(value):
 func set_pushed(value):
 	pushed = value
 	if pushed:
-		yield(get_tree().create_timer(0.5), "timeout")
+		await get_tree().create_timer(0.5).timeout
 		$AnimationPlayer.play("sink")
 	else:
 		$AnimationPlayer.play("default")

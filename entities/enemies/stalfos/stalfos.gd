@@ -4,7 +4,7 @@ var movetimer_length = 15
 var movetimer = 0
 var bonetimer_length = 50
 var bonetimer = 0
-onready var detect = $PlayerDetect
+@onready var detect = $PlayerDetect
 
 func _ready():
 	anim.play("unanimate")
@@ -61,5 +61,5 @@ func _physics_process(delta):
 func throw():
 		use_weapon("Bone")
 		network.peer_call(self, "use_weapon", ["Bone"])
-		bonetimer = bonetimer_length * rand_range(4, 5.5)
+		bonetimer = bonetimer_length * randf_range(4, 5.5)
 		return

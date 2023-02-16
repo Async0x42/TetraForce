@@ -1,10 +1,10 @@
-# For more information on API responses, please checkout the
-# API Usage page on the infrastructure wiki
+# For more information checked API responses, please checkout the
+# API Usage page checked the infrastructure wiki
 # https://github.com/loudsmilestudios/tetraforce-infrastructure/wiki/API-Usage
 
 extends Node
 
-export(String) var api_endpoint = "api.online.tetraforce.io"
+@export var api_endpoint: String = "api.online.tetraforce.io"
 
 var _http_client : HTTPRequest
 var auth_token : String
@@ -50,7 +50,7 @@ func stop_server(lobby : String = "") -> Dictionary:
 # Requests API for an auth token
 # Returns: True if auth token was found and set
 func login(username : String, password : String) -> bool:
-	var result = yield(_api_request("auth/login", {"username" : username, "password" : password}, HTTPClient.METHOD_POST, false), "completed")
+	var result = await _api_request("auth/login", {"username" : username, "password" : password}, HTTPClient.METHOD_POST, false).completed
 	if "success" in result and result["success"] and "AuthenticationResult" in result["message"]:
 		if "AccessToken" in result["message"]["AuthenticationResult"]:
 			auth_token = result["message"]["AuthenticationResult"]["AccessToken"]
@@ -85,7 +85,7 @@ func _api_request(path : String, params : Dictionary, method = HTTPClient.METHOD
 	
 	# Build required request objects
 	var request_string = "https://%s/%s%s" % [api_endpoint, path, _params_to_string(params)]	
-	var headers : PoolStringArray = []
+	var headers : PackedStringArray = []
 
 	# Update request with token if needed
 	if auth_required:
@@ -96,10 +96,12 @@ func _api_request(path : String, params : Dictionary, method = HTTPClient.METHOD
 	_http_client.request(request_string, headers, true, method)
 
 	# Get and parse result
-	var result = yield(_http_client, "request_completed")
+	var result = await _http_client.request_completed
 	if len(result) > 3:
 		if result[1] == 200:
-			var json : JSONParseResult = JSON.parse(result[3].get_string_from_utf8())
+			var test_json_conv = JSON.new()
+			test_json_conv.parse(result[3].get_string_from_utf8())
+			var json : JSON = test_json_conv.get_data()
 			if json.error:
 				return _build_error_message("Failed to parse response: %s" % json.error_string)
 			return json.result

@@ -4,7 +4,7 @@ var movetimer_length = 30
 var movetimer = 0
 var radius = 25
 
-onready var detect = $PlayerDetect
+@onready var detect = $PlayerDetect
 
 func _ready():
 	MAX_HEALTH = 1

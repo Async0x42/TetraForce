@@ -1,8 +1,8 @@
 extends Node
 
-var keys = 0 setget set_keys
+var keys = 0 : set = set_keys
 
-var thorn_order = 0 setget set_thorns
+var thorn_order = 0 : set = set_thorns
 
 signal update_persistent_state
 

@@ -1,9 +1,9 @@
 extends Node
 
-onready var music = AudioStreamPlayer.new()
+@onready var music = AudioStreamPlayer.new()
 # Music that's being faded out is transferred here by swapping instances around.
 # This implies that if a music set occurs too immediately, a cross-fade occurs.
-onready var _music_fading = AudioStreamPlayer.new()
+@onready var _music_fading = AudioStreamPlayer.new()
 # This is the amount of time after the fading music has completely faded,
 #  but before it's actually stopped.
 # This allows a fading song to be "brought back from the dead".
@@ -136,10 +136,10 @@ func set_music(song, musicfx = ""):
 		if fx.has("quiet"):
 			music_volume = QUIET_MUSIC_VOLUME
 		if song_change:
-			# fadein in particular is only usable on a song change,
+			# fadein in particular is only usable checked a song change,
 			#  because it *only* affects initial fade-in.
 			# Otherwise it would affect volume transitions.
-			# Not on by default because it cuts off early notes.
+			# Not checked by default because it cuts unchecked early notes.
 			# Must be placed after all music_volume controllers.
 			if not fx.has("fadein"):
 				# Start the music at full volume.
@@ -156,5 +156,5 @@ func play(sound, volume=0):
 	get_tree().get_root().add_child(new_sound)
 	new_sound.set_stream(load(path))
 	new_sound.set_volume_db(DEFAULT_SFX_VOLUME + volume)
-	new_sound.connect("finished", new_sound, "queue_free")
+	new_sound.connect("finished",Callable(new_sound,"queue_free"))
 	new_sound.play()

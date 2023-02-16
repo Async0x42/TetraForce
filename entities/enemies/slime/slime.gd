@@ -3,7 +3,7 @@ extends Enemy
 var movetimer_length = 30
 var movetimer = 0
 
-export var color = "green"
+@export var color = "green"
 
 func _ready():
 	match color:

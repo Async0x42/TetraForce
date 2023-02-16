@@ -5,8 +5,8 @@ var movetimer = 0
 var sees_player = false
 var shell = false
 
-onready var detect = $PlayerDetect
-onready var bombed = false setget set_bombed
+@onready var detect = $PlayerDetect
+@onready var bombed = false : set = set_bombed
 
 func _ready():
 	movedir = rand_direction()
@@ -66,10 +66,10 @@ func bombed(show_animation=true):
 	$CollisionShape2D.queue_free()
 	bombed = true
 	if show_animation:
-		var animation = preload("res://effects/bombable_rock_explosion.tscn").instance()
+		var animation = preload("res://effects/bombable_rock_explosion.tscn").instantiate()
 		get_parent().add_child(animation)
 		animation.position = position
-	yield(get_tree(), "idle_frame")
+	await get_tree().idle_frame
 	set_dead()
 
 func set_bombed(b):

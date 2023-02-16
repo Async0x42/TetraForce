@@ -1,11 +1,11 @@
-tool
+@tool
 extends Node
 
 var scene
 
 const default_meta = ["gid", "height", "width", "imageheight", "imagewidth", "path"]
 
-func post_import(imported_scene):
+func _post_import(imported_scene):
 	scene = imported_scene
 	
 	# add game.gd script
@@ -23,10 +23,10 @@ func post_import(imported_scene):
 			if child.name == "zones":
 				for zone in child.get_children():
 					zone.get_node("CollisionShape2D").shape.extents -= Vector2(8,8)
-					zone.set_collision_layer_bit(0, 0)
-					zone.set_collision_mask_bit(0, 0)
-					zone.set_collision_layer_bit(10, 1)
-					zone.set_collision_mask_bit(10, 1)
+					zone.set_collision_layer_value(0, 0)
+					zone.set_collision_mask_value(0, 0)
+					zone.set_collision_layer_value(10, 1)
+					zone.set_collision_mask_value(10, 1)
 					zone.set_script(preload("res://engine/zone.gd"))
 					set_properties(zone, zone)
 				continue
@@ -38,8 +38,8 @@ func post_import(imported_scene):
 
 func import_tilemap(tilemap):
 	tilemap.z_index -= 10
-	tilemap.set_collision_layer_bit(1,1)
-	tilemap.set_collision_mask_bit(1,1)
+	tilemap.set_collision_layer_value(1,1)
+	tilemap.set_collision_mask_value(1,1)
 	tilemap.position.y += 16
 	if tilemap.has_meta("script"):
 		tilemap.set_script(load(tilemap.get_meta("script")))
@@ -48,16 +48,16 @@ func import_tilemap(tilemap):
 	if tilemap.has_meta("z_index"):
 		tilemap.z_index = tilemap.get_meta("z_index")
 	if tilemap.has_meta("collision"):
-		tilemap.set_collision_layer_bit(0, 0)
-		tilemap.set_collision_layer_bit(1, 0)
-		tilemap.set_collision_mask_bit(0, 0)
-		tilemap.set_collision_mask_bit(1, 0)
+		tilemap.set_collision_layer_value(0, 0)
+		tilemap.set_collision_layer_value(1, 0)
+		tilemap.set_collision_mask_value(0, 0)
+		tilemap.set_collision_mask_value(1, 0)
 
 func spawn_object(object):
 	if object.has_meta("path"):
 		var path = object.get_meta("path")
 
-		var node = load(path).instance()
+		var node = load(path).instantiate()
 		scene.add_child(node)
 		node.set_owner(scene)
 		node.position = object.position + Vector2(8,-8)
@@ -74,7 +74,7 @@ func spawn_object(object):
 
 func replace_tilemap(tilemap, replace):
 	var used_cells = tilemap.get_used_cells()
-	var replacement = load(replace).instance()
+	var replacement = load(replace).instantiate()
 	tilemap.free()
 	scene.add_child(replacement)
 	replacement.set_owner(scene)

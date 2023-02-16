@@ -4,7 +4,7 @@ var movetimer_length = 70
 var movetimer = 0
 var active = false
 
-onready var detect = $PlayerDetect
+@onready var detect = $PlayerDetect
 
 func _ready():
 	MAX_HEALTH = 0.5
@@ -34,7 +34,7 @@ func _physics_process(delta):
 		if anim.current_animation == "sees_player":
 			anim.play("land")
 			network.peer_call(anim, "play", ["land"])
-			yield(get_tree().create_timer(5), "timeout")
+			await get_tree().create_timer(5).timeout
 	
 	if anim.current_animation == "activate":
 		return

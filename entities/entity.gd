@@ -1,12 +1,12 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
 class_name Entity
 
 # ATTRIBUTES
-export(String, "ENEMY", "PLAYER", "TRAP") var TYPE = "ENEMY"
-export(float, 0.5, 20, 0.5) var MAX_HEALTH = 1
-export(int) var SPEED = 70
-export(float, 0, 20, 0.5) var DAMAGE = 0.5
+@export var TYPE = "ENEMY" # (String, "ENEMY", "PLAYER", "TRAP")
+@export var MAX_HEALTH = 1 # (float, 0.5, 20, 0.5)
+@export var SPEED: int = 70
+@export var DAMAGE = 0.5 # (float, 0, 20, 0.5)
 
 # MOVEMENT
 var movedir = Vector2(0,0)
@@ -16,7 +16,7 @@ var last_movedir = Vector2(0,1)
 var last_safe_pos = position
 
 # COMBAT
-var health = MAX_HEALTH setget set_health
+var health = MAX_HEALTH : set = set_health
 var hitstun = 0
 var invunerable = 0
 var hurt_sfx = "hit_hurt"
@@ -26,17 +26,17 @@ signal update_count
 var state = "default"
 var home_position = Vector2(0,0)
 
-onready var anim = $AnimationPlayer
-onready var sprite = $Sprite
+@onready var anim = $AnimationPlayer
+@onready var sprite = $Sprite2D
 var hitbox : Area2D
 var center : Area2D
 var camera
 var tween
 var walkfx
-onready var map = get_parent()
+@onready var map = get_parent()
 
-var pos = Vector2(0,0) setget position_changed
-var animation = "idleDown" setget animation_changed
+var pos = Vector2(0,0) : set = position_changed
+var animation = "idleDown" : set = animation_changed
 
 signal update_persistent_state
 
@@ -51,18 +51,18 @@ func _ready():
 	
 	if !sprite.material:
 		sprite.material = ShaderMaterial.new()
-		sprite.material.set_shader(preload("res://entities/entity.shader"))
+		sprite.material.set_shader(preload("res://entities/entity.gdshader"))
 	health = MAX_HEALTH
 	home_position = position
 	pos = position
 	create_hitbox()
 	create_center()
 	create_tween()
-	walkfx = preload("res://effects/walkfx.tscn").instance()
+	walkfx = preload("res://effects/walkfx.tscn").instantiate()
 	add_child(walkfx)
-	#map.connect("player_entered", self, "player_entered")
-	set_collision_layer_bit(10, 1)
-	#set_collision_mask_bit(10, 1)
+	#map.connect("player_entered",Callable(self,"player_entered"))
+	set_collision_layer_value(10, 1)
+	#set_collision_mask_value(10, 1)
 	set_process(true)
 
 func get_game(node):
@@ -92,8 +92,8 @@ func create_hitbox():
 	new_shape.radius = $CollisionShape2D.shape.radius + 1
 	new_shape.height = $CollisionShape2D.shape.height + 1
 	
-	new_hitbox.set_collision_layer_bit(7,1)
-	new_hitbox.set_collision_mask_bit(7,1)
+	new_hitbox.set_collision_layer_value(7,1)
+	new_hitbox.set_collision_mask_value(7,1)
 	
 	hitbox = new_hitbox
 
@@ -110,14 +110,14 @@ func create_center():
 	new_shape.extents = Vector2(1,1)
 	
 	# tall_grass
-	new_center.set_collision_layer_bit(0,0)
-	new_center.set_collision_mask_bit(0,0)
-	new_center.set_collision_layer_bit(5,1)
-	new_center.set_collision_mask_bit(5,1)
-	new_center.set_collision_layer_bit(6,1)
-	new_center.set_collision_mask_bit(6,1)
-	new_center.set_collision_layer_bit(7,1)
-	new_center.set_collision_mask_bit(7,1)
+	new_center.set_collision_layer_value(0,0)
+	new_center.set_collision_mask_value(0,0)
+	new_center.set_collision_layer_value(5,1)
+	new_center.set_collision_mask_value(5,1)
+	new_center.set_collision_layer_value(6,1)
+	new_center.set_collision_mask_value(6,1)
+	new_center.set_collision_layer_value(7,1)
+	new_center.set_collision_mask_value(7,1)
 	
 	new_center.position.y += 6
 	
@@ -135,7 +135,8 @@ func loop_movement():
 	else:
 		motion = knockdir.normalized() * 125
 	
-	move_and_slide(motion)
+	set_velocity(motion)
+	move_and_slide()
 	
 	pos = position
 	
@@ -161,7 +162,7 @@ func loop_damage():
 	if hitstun > 1:
 		hitstun -= 1
 	elif hitstun == 1:
-		if sprite.material.get_shader_param("is_hurt") == true:
+		if sprite.material.get_shader_parameter("is_hurt") == true:
 			set_hurt_texture(false)
 			network.peer_call(self, "set_hurt_texture", [false])
 		check_for_death()
@@ -186,14 +187,14 @@ func loop_damage():
 			damage(body.DAMAGE, global_position - body.global_position, body)
 
 func loop_holes():
-	if get_collision_layer_bit(7) == true:
+	if get_collision_layer_value(7) == true:
 		return
 	for body in center.get_overlapping_bodies():
 		if body is Holes:
-			var hole_origin = body.map_to_world(body.world_to_map(position.round() + Vector2(0,6))) + Vector2(8,8)
+			var hole_origin = body.map_to_local(body.local_to_map(position.round() + Vector2(0,6))) + Vector2(8,8)
 			var hole_hitbox = Rect2(hole_origin - Vector2(5,5), Vector2(10,10))
-			position = position.linear_interpolate(hole_origin, 0.1) # there's a way to lerp w/ delta time i forgot it tho
-			position += Vector2(0, rand_range(-1,0))
+			position = position.lerp(hole_origin, 0.1) # there's a way to lerp w/ delta time i forgot it tho
+			position += Vector2(0, randf_range(-1,0))
 			if hole_hitbox.has_point(position + Vector2(0,4)):
 				create_hole_fx(hole_origin)
 				network.peer_call(self, "create_hole_fx", [hole_origin])
@@ -204,13 +205,13 @@ func hole_fall():
 	pass
 
 func create_hole_fx(pos):
-	var hole_fx = preload("res://effects/hole_falling.tscn").instance()
+	var hole_fx = preload("res://effects/hole_falling.tscn").instantiate()
 	map.add_child(hole_fx)
 	hole_fx.position = pos
 	sfx.play("fall")
 	
 func create_drowning_fx(pos):
-	var drowning_fx = preload("res://effects/drowning.tscn").instance()
+	var drowning_fx = preload("res://effects/drowning.tscn").instantiate()
 	map.add_child(drowning_fx)
 	drowning_fx.position = pos
 	sfx.play("drown")
@@ -241,8 +242,8 @@ func update_health(amount):
 func check_for_death():
 	pass
 
-remote func set_hurt_texture(h):
-	sprite.material.set_shader_param("is_hurt", h)
+@rpc("any_peer") func set_hurt_texture(h):
+	sprite.material.set_shader_parameter("is_hurt", h)
 
 func anim_switch(a):
 	var newanim: String = str(a, spritedir)
@@ -252,24 +253,24 @@ func anim_switch(a):
 		anim.play(newanim)
 	animation = newanim
 
-sync func use_weapon(weapon_name, input="A"):
+@rpc("any_peer", "call_local") func use_weapon(weapon_name, input="A"):
 	var weapon = global.weapons_def[weapon_name]
-	var new_weapon = load(weapon.path).instance()
+	var new_weapon = load(weapon.path).instantiate()
 	var weapon_group = str(weapon_name, name)
 	new_weapon.add_to_group(weapon_group)
 	new_weapon.add_to_group(name)
 	add_child(new_weapon)
 	
-	new_weapon.set_network_master(get_network_master())
+	new_weapon.set_multiplayer_authority(get_multiplayer_authority())
 	
 	if get_tree().get_nodes_in_group(weapon_group).size() > new_weapon.MAX_AMOUNT:
 		new_weapon.delete()
 		return
 	
-	if is_network_master() && is_in_group("player") && weapon.ammo_type != "":
+	if is_multiplayer_authority() && is_in_group("player") && weapon.ammo_type != "":
 		if global.ammo[weapon.ammo_type] <= 0:
 			new_weapon.delete()
-			yield(get_tree().create_timer(0.05), "timeout") # hacky
+			await get_tree().create_timer(0.05).timeout # hacky
 			network.peer_call(self, "remove_last_item", [weapon_group])
 			return
 		global.ammo[weapon.ammo_type] -= 1

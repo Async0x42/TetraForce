@@ -2,10 +2,10 @@ extends Node
 
 signal player_entered
 
-var camera = preload("res://entities/player/camera.tscn").instance()
-export var music = ""
-export var musicfx = ""
-export var light = "default"
+var camera = preload("res://entities/player/camera.tscn").instantiate()
+@export var music = ""
+@export var musicfx = ""
+@export var light = "default"
 
 var current_enemies = []
 
@@ -20,10 +20,10 @@ func _ready():
 	if global.next_entrance == "":
 		screenfx.play("fadewhite")
 		screenfx.seek(10)
-		var entrance_picker = preload("res://ui/main/entrances.tscn").instance()
+		var entrance_picker = preload("res://ui/main/entrances.tscn").instantiate()
 		add_child(entrance_picker)
 		entrance_picker.get_entrances(get_tree().get_nodes_in_group("entrances"))
-		yield(entrance_picker, "entrance_chosen")
+		await entrance_picker.entrance_chosen
 		entrance_picker.queue_free()
 	
 	add_new_player(network.pid)
@@ -33,10 +33,10 @@ func _ready():
 	# force the server to acknowledge this player's presence
 	network.send_current_map() # starts player list updates
 	screenfx.play("fadein")
-	connect("player_entered", self, "player_entered")
-	network.connect("refresh_player_request", self, "refresh_player")
+	connect("player_entered",Callable(self,"player_entered"))
+	network.connect("refresh_player_request",Callable(self,"refresh_player"))
 
-func _process(delta): # can be on screen change instead of process
+func _process(delta): # can be checked screen change instead of process
 	if !network.is_map_host():
 		return
 	
@@ -67,9 +67,9 @@ func _process(delta): # can be on screen change instead of process
 				entity.position = entity.home_position
 
 func add_new_player(id):
-	var new_player = preload("res://entities/player/player.tscn").instance()
+	var new_player = preload("res://entities/player/player.tscn").instantiate()
 	new_player.name = str(id)
-	new_player.set_network_master(id, true)
+	new_player.set_multiplayer_authority(id, true)
 	
 	add_child(new_player)
 	new_player.camera = camera
@@ -97,7 +97,7 @@ func update_puppets():
 	var player_nodes = get_tree().get_nodes_in_group("player")
 	var player_names = []
 	for player in player_nodes:
-		# first remove old players
+		# first remove_at old players
 		var id = int(player.name)
 		if !network.map_peers.has(int(id)) && id != network.pid:
 			remove_player(id)
@@ -135,7 +135,7 @@ func spawn_collectable(collectable, pos, chance):
 				network.peer_call(self, "create_collectable", [path, pos])
 			
 func create_collectable(path, pos):
-		var new_collectable = load(path).instance()
+		var new_collectable = load(path).instantiate()
 		call_deferred("add_child", new_collectable)
 		new_collectable.position = pos
 		new_collectable.item_position.append(pos)
